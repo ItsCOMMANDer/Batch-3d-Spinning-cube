@@ -10,12 +10,21 @@ for /l %%x in (0,1,50) do (
    )
 )
 
-for /f "tokens=1-4 delims= " %%a in (config.txt) do (
-    call :drawLine %%a %%b %%c %%d
+for /f "tokens=1-4 delims= " %%a in (lines.txt) do (
+    if %%a EQU p (
+        set %%b_x1=%%c
+        set %%b_y1=%%d
+    )
 )
 
-::got forgive me about what i've done
+for /f "tokens=1-3 delims= " %%a in (lines.txt) do (
+    if %%a EQU l (
+	set /a i+=1
+        call :drawline !%%b_x1! !%%b_y1! !%%c_x1! !%%c_y1!
+    )
+)
 
+::dont ask
 > screen.txt (
    echo !x0y0!!x1y0!!x2y0!!x3y0!!x4y0!!x5y0!!x6y0!!x7y0!!x8y0!!x9y0!!x10y0!!x11y0!!x12y0!!x13y0!!x14y0!!x15y0!!x16y0!!x17y0!!x18y0!!x19y0!!x20y0!!x21y0!!x22y0!!x23y0!!x24y0!!x25y0!!x26y0!!x27y0!!x28y0!!x29y0!!x30y0!!x31y0!!x32y0!!x33y0!!x34y0!!x35y0!!x36y0!!x37y0!!x38y0!!x39y0!!x40y0!!x41y0!!x42y0!!x43y0!!x44y0!!x45y0!!x46y0!!x47y0!!x48y0!!x49y0!!x50y0! 
 echo !x0y1!!x1y1!!x2y1!!x3y1!!x4y1!!x5y1!!x6y1!!x7y1!!x8y1!!x9y1!!x10y1!!x11y1!!x12y1!!x13y1!!x14y1!!x15y1!!x16y1!!x17y1!!x18y1!!x19y1!!x20y1!!x21y1!!x22y1!!x23y1!!x24y1!!x25y1!!x26y1!!x27y1!!x28y1!!x29y1!!x30y1!!x31y1!!x32y1!!x33y1!!x34y1!!x35y1!!x36y1!!x37y1!!x38y1!!x39y1!!x40y1!!x41y1!!x42y1!!x43y1!!x44y1!!x45y1!!x46y1!!x47y1!!x48y1!!x49y1!!x50y1! 
@@ -51,58 +60,73 @@ pause > nul
 exit /b
 
 
-
 :drawLine
-set x1=%1
-set y1=%2
-set x2=%3
-set y2=%4
+   set _x1=%1
+   set _y1=%2
+   set _x2=%3
+   set _y2=%4
 
-md %FilePath%\%name%
+   set /a _dx=_x2 - _x1
+   if !_dx! LSS 0 (
+      set /a _dx*=-1
+   )
 
-set /a dx=x2 - x1
-set /a dy=y2 - y1
+   set /a _dy=_y2 - _y1
+   if !_dy! LSS 0 (
+      set /a _dy*=-1
+   )
+   
+   if !_x1! GTR !_x2! set _sx=-1
+   if !_x1! EQU !_x2! set _sx=0
+   if !_x1! LSS !_x2! set _sx=1
 
-if !x1! gtr !x2! set sx=-1
-if !x1! equ !x2! set sx=0
-if !x1! lss !x2! set sx=1
-if !y1! gtr !y2! set sy=-1
-if !y1! equ !y2! set sy=0
-if !y1! lss !y2! set sy=1
+   if !_y1! GTR !_y2! set _sy=-1
+   if !_y1! EQU !_y2! set _sy=0
+   if !_y1! LSS !_y2! set _sy=1
 
-set /a err=dx - dy
-set /a x=x1, y=y1
+   set /a _err= _dx - _dy
+   
+   set /a _x= _x1 
+   set /a _y= _y1
 
-set point=1
-
-:DRAWLINE_LOOP
-if !x! equ !x2! (
-    if !y! equ !y2! (
-        goto :DRAWLINE_BREAK
+   :drawLine_LOOP
+    if !_x! EQU !_x2! (
+      if !_y! EQU !_y2! (
+         goto :drawLine_BREAK
+      )
     )
-)
 
-set x!x!y!y!=!esc![48;2;255;255;255;38;2;0;0;0m 
+    set x!_x!y!_y!=!esc![48;2;255;255;255;38;2;0;0;0m 
 
+    set /a _e2= 2 * _err
 
-set /a e2=2 * err
+    if !_dy! GTR 0 (
+      if !_e2! GTR -!_dy! (
+         set /a _err-=_dy
+         set /a _x+= _sx
+      )
+    )
 
-set _dy=
-if !e2! gtr -!dy:-^=! (
-    set /a err-=!dy!
-    set /a x+=!sx!
-)
-if !e2! lss !dx:-=! (
-    set /a err+=!dx!
-    set /a y+=!sy!
-)
+    if !_dy! LSS 0 (
+      if !_e2! GTR !_dy:-=! (
+         set /a _err-=_dy
+         set /a _x+= _sx
+      )
+    )
 
-set /a point+=1
+    if !_dy! EQU 0 (
+      if !_e2! GTR !_dy! (
+         set /a _err-=_dy
+         set /a _x+= _sx
+      )
+    )
 
-goto :DRAWLINE_LOOP
+    if !_e2! LSS !_dx! (
+      set /a _err+=_dx
+      set /a _y+=_sy
+    )
+    goto :drawLine_LOOP
 
-:DRAWLINE_BREAK
-
-set x!x!y!y!=!esc![48;2;255;255;255;38;2;0;0;0m 
-
+   :drawLine_BREAK
+   set x!_x2!y!_y2!=!esc![48;2;255;255;255;38;2;0;0;0m 
 exit /b
